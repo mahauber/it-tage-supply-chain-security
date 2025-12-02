@@ -13,6 +13,9 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}/simple-service:${{ github.sha }}
+
 jobs:
   build-sign-deploy:
     runs-on: ubuntu-latest
