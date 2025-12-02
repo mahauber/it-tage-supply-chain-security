@@ -1,0 +1,88 @@
+name: Build simple-service & Deploy to dev AKS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'simple-service/**'
+      - '.github/workflows/build-deploy-simple-service.yml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-sign-deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout repository
+        run: |
+          git clone --depth 1 --branch ${GITHUB_REF#refs/heads/} https://github.com/${{ github.repository }} .
+
+      - name: Install Cosign
+        run: |
+          chmod +x ${{ github.workspace }}/.github/scripts/install-cosign.sh
+          ${{ github.workspace }}/.github/scripts/install-cosign.sh v3.0.2
+
+      - name: Set up Docker Buildx
+        run: |
+          chmod +x ${{ github.workspace }}/.github/scripts/setup-docker-buildx.sh
+          ${{ github.workspace }}/.github/scripts/setup-docker-buildx.sh
+
+      - name: Login to GitHub Container Registry
+        run: |
+          chmod +x ${{ github.workspace }}/.github/scripts/docker-login.sh
+          ${{ github.workspace }}/.github/scripts/docker-login.sh ghcr.io ${{ github.actor }} ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push container images
+        run: |
+          chmod +x ${{ github.workspace }}/.github/scripts/build-push-image.sh
+          ${{ github.workspace }}/.github/scripts/build-push-image.sh ${{ env.IMAGE_NAME }} ${{ github.workspace }}/simple-service
+
+      - name: Install Trivy
+        run: |
+          chmod +x ${{ github.workspace }}/.github/scripts/install-trivy.sh
+          ${{ github.workspace }}/.github/scripts/install-trivy.sh
+
+      - name: Trivy scan vulnerabilities
+        run: |
+          chmod +x ${{ github.workspace }}/.github/scripts/trivy-scan.sh
+          ${{ github.workspace }}/.github/scripts/trivy-scan.sh ${{ env.IMAGE_NAME }}
+
+      - name: Push Docker image
+        run: |
+          chmod +x ${{ github.workspace }}/.github/scripts/push-image-digest.sh
+          ${{ github.workspace }}/.github/scripts/push-image-digest.sh ${{ env.IMAGE_NAME }} ${{ vars.IMAGE_REGISTRY }}
+
+      - name: Sign Docker image
+        run: |
+          chmod +x ${{ github.workspace }}/.github/scripts/sign-image.sh
+          ${{ github.workspace }}/.github/scripts/sign-image.sh ${{ env.IMAGE_REF_DIGEST }} $AZ_KEY_REF
+
+      - name: Trivy generate SBOM
+        run: |
+          chmod +x ${{ github.workspace }}/.github/scripts/generate-sbom.sh
+          ${{ github.workspace }}/.github/scripts/generate-sbom.sh ${{ env.IMAGE_REF_DIGEST }} simple-service.cdx.json
+
+      - name: Sign SBOM
+        run: |
+          chmod +x ${{ github.workspace }}/.github/scripts/sign-sbom.sh
+          ${{ github.workspace }}/.github/scripts/sign-sbom.sh ${{ env.IMAGE_REF_DIGEST }} $AZ_KEY_REF simple-service.cdx.json
+
+      - name: Deploy to DEV AKS cluster
+        run: |
+          chmod +x ${{ github.workspace }}/.github/scripts/deploy-aks.sh
+          ${{ github.workspace }}/.github/scripts/deploy-aks.sh \
+            ${{ vars.DEV_AKS_RESOURCE_GROUP }} \
+            ${{ vars.DEV_AKS_CLUSTER_NAME }} \
+            ${{ env.IMAGE_REF_DIGEST }} \
+            ${GITHUB_WORKSPACE}/k8s/applications/simple-service/overlays/dev \
+            $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA \
+            $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+
+      - name: Summary
+        run: |
+          echo "✅ Successfully built and deployed image: \`${{ env.IMAGE_NAME }}\`" >> $GITHUB_STEP_SUMMARY
