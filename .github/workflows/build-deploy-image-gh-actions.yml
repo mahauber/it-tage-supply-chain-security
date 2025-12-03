@@ -36,9 +36,11 @@ jobs:
           ${{ github.workspace }}/.github/scripts/setup-docker-buildx.sh
 
       - name: Login to GitHub Container Registry
+        env:
+          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         run: |
           chmod +x ${{ github.workspace }}/.github/scripts/docker-login.sh
-          ${{ github.workspace }}/.github/scripts/docker-login.sh ghcr.io ${{ github.actor }} ${{ secrets.GITHUB_TOKEN }}
+          ${{ github.workspace }}/.github/scripts/docker-login.sh ghcr.io ${{ github.actor }}
 
       - name: Build and Push container images
         run: |
@@ -61,9 +63,11 @@ jobs:
           ${{ github.workspace }}/.github/scripts/push-image-digest.sh ${{ env.IMAGE_NAME }} ${{ vars.IMAGE_REGISTRY }}
 
       - name: Sign Docker image
+        env:
+          COSIGN_KEY_REF: ${{ secrets.AZ_KEY_REF }}
         run: |
           chmod +x ${{ github.workspace }}/.github/scripts/sign-image.sh
-          ${{ github.workspace }}/.github/scripts/sign-image.sh ${{ env.IMAGE_REF_DIGEST }} $AZ_KEY_REF
+          ${{ github.workspace }}/.github/scripts/sign-image.sh ${{ env.IMAGE_REF_DIGEST }}
 
       - name: Trivy generate SBOM
         run: |
@@ -71,9 +75,11 @@ jobs:
           ${{ github.workspace }}/.github/scripts/generate-sbom.sh ${{ env.IMAGE_REF_DIGEST }} simple-service.cdx.json
 
       - name: Sign SBOM
+        env:
+          COSIGN_KEY_REF: ${{ secrets.AZ_KEY_REF }}
         run: |
           chmod +x ${{ github.workspace }}/.github/scripts/sign-sbom.sh
-          ${{ github.workspace }}/.github/scripts/sign-sbom.sh ${{ env.IMAGE_REF_DIGEST }} $AZ_KEY_REF simple-service.cdx.json
+          ${{ github.workspace }}/.github/scripts/sign-sbom.sh ${{ env.IMAGE_REF_DIGEST }} simple-service.cdx.json
 
       - name: Deploy to DEV AKS cluster
         run: |
