@@ -14,7 +14,9 @@ permissions:
   contents: read
 
 env:
-  IMAGE_NAME: ghcr.io/${{ github.repository }}/simple-service:${{ github.sha }}
+  ACR_NAME: acrsupplychaindemo
+  IMAGE_NAME: ${{ env.ACR_NAME }}.azurecr.io/simple-service:${{ github.sha }}
+  SCRIPTS_DIR: ${{ github.workspace }}/.github/scripts
 
 jobs:
   build-sign-deploy:
@@ -27,70 +29,81 @@ jobs:
 
       - name: Install Cosign
         run: |
-          chmod +x ${{ github.workspace }}/.github/scripts/install-cosign.sh
-          ${{ github.workspace }}/.github/scripts/install-cosign.sh v3.0.2
+          ${{ env.SCRIPTS_DIR }}/install-cosign.sh --version v3.0.2
 
       - name: Set up Docker Buildx
         run: |
-          chmod +x ${{ github.workspace }}/.github/scripts/setup-docker-buildx.sh
-          ${{ github.workspace }}/.github/scripts/setup-docker-buildx.sh
+          ${{ env.SCRIPTS_DIR }}/setup-docker-buildx.sh
 
-      - name: Login to GitHub Container Registry
-        env:
-          DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Azure using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to Azure Container Registry
         run: |
-          chmod +x ${{ github.workspace }}/.github/scripts/docker-login.sh
-          ${{ github.workspace }}/.github/scripts/docker-login.sh ghcr.io ${{ github.actor }}
+          ${{ env.SCRIPTS_DIR }}/docker-login.sh \
+            --registry ${{ env.ACR_NAME }}.azurecr.io \
+            --auth-method oidc \
+            --type acr
 
       - name: Build and Push container images
         run: |
-          chmod +x ${{ github.workspace }}/.github/scripts/build-push-image.sh
-          ${{ github.workspace }}/.github/scripts/build-push-image.sh ${{ env.IMAGE_NAME }} ${{ github.workspace }}/simple-service
+          ${{ env.SCRIPTS_DIR }}/build-push-image.sh \
+            --image ${{ env.IMAGE_NAME }} \
+            --context ${{ github.workspace }}/simple-service \
+            --platforms linux/amd64,linux/arm64
 
       - name: Install Trivy
         run: |
-          chmod +x ${{ github.workspace }}/.github/scripts/install-trivy.sh
-          ${{ github.workspace }}/.github/scripts/install-trivy.sh
+          ${{ env.SCRIPTS_DIR }}/install-trivy.sh
 
       - name: Trivy scan vulnerabilities
         run: |
-          chmod +x ${{ github.workspace }}/.github/scripts/trivy-scan.sh
-          ${{ github.workspace }}/.github/scripts/trivy-scan.sh ${{ env.IMAGE_NAME }}
+          ${{ env.SCRIPTS_DIR }}/trivy-scan.sh \
+            --image ${{ env.IMAGE_NAME }} \
+            --severity CRITICAL,HIGH
 
       - name: Push Docker image
         run: |
-          chmod +x ${{ github.workspace }}/.github/scripts/push-image-digest.sh
-          ${{ github.workspace }}/.github/scripts/push-image-digest.sh ${{ env.IMAGE_NAME }} ${{ vars.IMAGE_REGISTRY }}
+          ${{ env.SCRIPTS_DIR }}/push-image-digest.sh \
+            --image ${{ env.IMAGE_NAME }} \
+            --registry ${{ env.ACR_NAME }}
 
       - name: Sign Docker image
         env:
           COSIGN_KEY_REF: ${{ secrets.AZ_KEY_REF }}
         run: |
-          chmod +x ${{ github.workspace }}/.github/scripts/sign-image.sh
-          ${{ github.workspace }}/.github/scripts/sign-image.sh ${{ env.IMAGE_REF_DIGEST }}
+          ${{ env.SCRIPTS_DIR }}/sign-image.sh \
+            --image ${{ env.IMAGE_REF_DIGEST }}
 
       - name: Trivy generate SBOM
         run: |
-          chmod +x ${{ github.workspace }}/.github/scripts/generate-sbom.sh
-          ${{ github.workspace }}/.github/scripts/generate-sbom.sh ${{ env.IMAGE_REF_DIGEST }} simple-service.cdx.json
+          ${{ env.SCRIPTS_DIR }}/generate-sbom.sh \
+            --image ${{ env.IMAGE_REF_DIGEST }} \
+            --output simple-service.cdx.json \
+            --format cyclonedx
 
       - name: Sign SBOM
         env:
           COSIGN_KEY_REF: ${{ secrets.AZ_KEY_REF }}
         run: |
-          chmod +x ${{ github.workspace }}/.github/scripts/sign-sbom.sh
-          ${{ github.workspace }}/.github/scripts/sign-sbom.sh ${{ env.IMAGE_REF_DIGEST }} simple-service.cdx.json
+          ${{ env.SCRIPTS_DIR }}/sign-sbom.sh \
+            --image ${{ env.IMAGE_REF_DIGEST }} \
+            --sbom-file simple-service.cdx.json \
+            --sbom-type cyclonedx
 
       - name: Deploy to DEV AKS cluster
         run: |
-          chmod +x ${{ github.workspace }}/.github/scripts/deploy-aks.sh
-          ${{ github.workspace }}/.github/scripts/deploy-aks.sh \
-            ${{ vars.DEV_AKS_RESOURCE_GROUP }} \
-            ${{ vars.DEV_AKS_CLUSTER_NAME }} \
-            ${{ env.IMAGE_REF_DIGEST }} \
-            ${GITHUB_WORKSPACE}/k8s/applications/simple-service/overlays/dev \
-            $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA \
-            $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          ${{ env.SCRIPTS_DIR }}/deploy-aks.sh \
+            --resource-group ${{ vars.DEV_AKS_RESOURCE_GROUP }} \
+            --cluster-name ${{ vars.DEV_AKS_CLUSTER_NAME }} \
+            --image ${{ env.IMAGE_REF_DIGEST }} \
+            --kustomize-path ${GITHUB_WORKSPACE}/k8s/applications/simple-service/overlays/dev \
+            --git-commit $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA \
+            --run-url $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
 
       - name: Summary
         run: |
