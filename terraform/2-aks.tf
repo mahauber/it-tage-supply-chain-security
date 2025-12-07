@@ -31,6 +31,13 @@ resource "azurerm_kubernetes_cluster" "aks" {
     type = "SystemAssigned"
   }
 
+  lifecycle {
+    ignore_changes = [
+      default_node_pool[0].upgrade_settings,
+      default_node_pool[0].tags
+    ]
+  }
+
   azure_active_directory_role_based_access_control {
     azure_rbac_enabled = true
     tenant_id          = data.azurerm_client_config.current.tenant_id
