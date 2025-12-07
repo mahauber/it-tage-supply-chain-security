@@ -44,10 +44,8 @@ jobs:
 
       - name: Login to Azure Container Registry
         run: |
-          ${{ env.SCRIPTS_DIR }}/docker-login.sh \
-            --registry ${{ env.ACR_NAME }}.azurecr.io \
-            --auth-method oidc \
-            --type acr
+          ${{ env.SCRIPTS_DIR }}/acr-login.sh \
+            --registry ${{ env.ACR_NAME }}.azurecr.io
 
       - name: Build and Push container images
         run: |
