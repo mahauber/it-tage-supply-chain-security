@@ -99,6 +99,13 @@ jobs:
             --image ${{ env.IMAGE_REF_DIGEST }} \
             --key ${{ secrets.AZ_KEY_REF }}
 
+      - name: Generate provenance attestation
+        uses: actions/attest-build-provenance@v3.0.0
+        with:
+          subject-name: ${{ env.ACR_NAME }}.azurecr.io/simple-service
+          subject-digest: ${{ env.IMAGE_DIGEST }}
+          push-to-registry: true
+
       ##########################
       ## GENERATE & SIGN SBOM ##
       ##########################

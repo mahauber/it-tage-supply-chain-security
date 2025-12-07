@@ -77,5 +77,9 @@ if [[ -z "${IMAGE_DIGEST}" ]]; then
   exit 1
 fi
 
+# Extract just the digest hash (sha256:...)
+DIGEST_HASH=$(echo "${IMAGE_DIGEST}" | cut -d'@' -f2)
+
 echo "IMAGE_REF_DIGEST=${IMAGE_DIGEST}" >> $GITHUB_ENV
+echo "IMAGE_DIGEST=${DIGEST_HASH}" >> $GITHUB_ENV
 echo "✅ Successfully pushed image with digest: ${IMAGE_DIGEST}"
