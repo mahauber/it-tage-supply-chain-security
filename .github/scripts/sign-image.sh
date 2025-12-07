@@ -3,23 +3,22 @@ set -euo pipefail
 
 # Default values
 IMAGE_REF=""
+COSIGN_KEY_REF=""
 
 # Usage function
 usage() {
   cat <<EOF
-Usage: $0 --image IMAGE_REF
+Usage: $0 --image IMAGE_REF --key COSIGN_KEY_REF
 
 Sign container image using Cosign.
 
 Required arguments:
-  --image IMAGE_REF    Container image reference with digest
-  --help               Show this help message
-
-Environment variables:
-  COSIGN_KEY_REF       Cosign key reference (required)
+  --image IMAGE_REF        Container image reference with digest
+  --key COSIGN_KEY_REF     Cosign key reference (e.g., azurekms://...)
+  --help                   Show this help message
 
 Example:
-  COSIGN_KEY_REF=azurekms://... $0 --image myregistry.azurecr.io/app@sha256:abc123
+  $0 --image myregistry.azurecr.io/app@sha256:abc123 --key azurekms://...
 EOF
   exit 1
 }
@@ -29,6 +28,10 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     --image)
       IMAGE_REF="$2"
+      shift 2
+      ;;
+    --key)
+      COSIGN_KEY_REF="$2"
       shift 2
       ;;
     --help)
@@ -47,10 +50,9 @@ if [[ -z "${IMAGE_REF}" ]]; then
   usage
 fi
 
-# Validate environment variable
-if [[ -z "${COSIGN_KEY_REF:-}" ]]; then
-  echo "ERROR: COSIGN_KEY_REF environment variable not set" >&2
-  exit 1
+if [[ -z "${COSIGN_KEY_REF}" ]]; then
+  echo "ERROR: Cosign key reference is required (--key flag)" >&2
+  usage
 fi
 
 # Validate image reference contains digest

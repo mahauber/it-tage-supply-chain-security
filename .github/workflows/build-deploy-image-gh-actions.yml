@@ -94,11 +94,10 @@ jobs:
             --version v3.0.2
 
       - name: Sign Docker image
-        env:
-          COSIGN_KEY_REF: ${{ secrets.AZ_KEY_REF }}
         run: |
           ${{ env.SCRIPTS_DIR }}/sign-image.sh \
-            --image ${{ env.IMAGE_REF_DIGEST }}
+            --image ${{ env.IMAGE_REF_DIGEST }} \
+            --key ${{ secrets.AZ_KEY_REF }}
 
       ##########################
       ## GENERATE & SIGN SBOM ##
@@ -112,13 +111,12 @@ jobs:
             --format cyclonedx
 
       - name: Sign SBOM
-        env:
-          COSIGN_KEY_REF: ${{ secrets.AZ_KEY_REF }}
         run: |
           ${{ env.SCRIPTS_DIR }}/sign-sbom.sh \
             --image ${{ env.IMAGE_REF_DIGEST }} \
             --sbom-file simple-service.cdx.json \
-            --sbom-type cyclonedx
+            --sbom-type cyclonedx \
+            --key ${{ secrets.AZ_KEY_REF }}
 
       ###############################
       ## DEPLOY TO DEV AKS CLUSTER ##

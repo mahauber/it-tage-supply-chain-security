@@ -1,14 +1,14 @@
 resource "azurerm_kubernetes_cluster" "aks" {
-  name                = var.aks_name
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  dns_prefix          = "kubernetes"
+  name                              = var.aks_name
+  location                          = azurerm_resource_group.main.location
+  resource_group_name               = azurerm_resource_group.main.name
+  dns_prefix                        = "kubernetes"
   oidc_issuer_enabled               = true
   workload_identity_enabled         = true
   local_account_disabled            = true
   role_based_access_control_enabled = true
   run_command_enabled               = false
-  kubernetes_version = "1.33.5"
+  kubernetes_version                = "1.33.5"
 
   network_profile {
     network_plugin      = "azure"

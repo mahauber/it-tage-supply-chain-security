@@ -5,27 +5,26 @@ set -euo pipefail
 IMAGE_REF=""
 SBOM_FILE=""
 SBOM_TYPE="cyclonedx"
+COSIGN_KEY_REF=""
 
 # Usage function
 usage() {
   cat <<EOF
-Usage: $0 --image IMAGE_REF --sbom-file SBOM_FILE [--sbom-type TYPE]
+Usage: $0 --image IMAGE_REF --sbom-file SBOM_FILE --key COSIGN_KEY_REF [--sbom-type TYPE]
 
 Sign SBOM and attach to container image using Cosign.
 
 Required arguments:
   --image IMAGE_REF        Container image reference with digest
   --sbom-file SBOM_FILE    Path to SBOM file
+  --key COSIGN_KEY_REF     Cosign key reference (e.g., azurekms://...)
 
 Optional arguments:
   --sbom-type TYPE         SBOM type: cyclonedx or spdx (default: cyclonedx)
   --help                   Show this help message
 
-Environment variables:
-  COSIGN_KEY_REF           Cosign key reference (required)
-
 Example:
-  COSIGN_KEY_REF=azurekms://... $0 --image myregistry.azurecr.io/app@sha256:abc --sbom-file sbom.json
+  $0 --image myregistry.azurecr.io/app@sha256:abc --sbom-file sbom.json --key azurekms://...
 EOF
   exit 1
 }
@@ -43,6 +42,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --sbom-type)
       SBOM_TYPE="$2"
+      shift 2
+      ;;
+    --key)
+      COSIGN_KEY_REF="$2"
       shift 2
       ;;
     --help)
@@ -66,10 +69,9 @@ if [[ -z "${SBOM_FILE}" ]]; then
   usage
 fi
 
-# Validate environment variable
-if [[ -z "${COSIGN_KEY_REF:-}" ]]; then
-  echo "ERROR: COSIGN_KEY_REF environment variable not set" >&2
-  exit 1
+if [[ -z "${COSIGN_KEY_REF}" ]]; then
+  echo "ERROR: Cosign key reference is required (--key flag)" >&2
+  usage
 fi
 
 # Validate SBOM file exists
