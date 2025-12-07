@@ -26,6 +26,7 @@ jobs:
       - name: Checkout repository
         run: |
           git clone --depth 1 --branch ${GITHUB_REF#refs/heads/} https://github.com/${{ github.repository }} .
+          chmod +x ${{ env.SCRIPTS_DIR }}/*.sh
 
       - name: Install Cosign
         run: |
