@@ -55,8 +55,9 @@ jobs:
         run: |
           ${{ env.SCRIPTS_DIR }}/build-push-image.sh \
             --image ${{ env.IMAGE_NAME }} \
-            --context ${{ github.workspace }}/simple-service \
-            --platforms linux/amd64,linux/arm64
+            --build-context ${{ github.workspace }}/simple-service \
+            --platforms linux/amd64,linux/arm64 \
+            --push
 
       - name: Install Trivy
         run: |

@@ -5,24 +5,26 @@ set -euo pipefail
 PLATFORMS="linux/amd64,linux/arm64"
 IMAGE_NAME=""
 BUILD_CONTEXT=""
+PUSH="false"
 
 # Usage function
 usage() {
   cat <<EOF
-Usage: $0 --image IMAGE_NAME --context BUILD_CONTEXT [--platforms PLATFORMS]
+Usage: $0 --image IMAGE_NAME --build-context BUILD_CONTEXT [--platforms PLATFORMS] [--push]
 
-Build and push multi-platform Docker images.
+Build multi-platform Docker images.
 
 Required arguments:
-  --image IMAGE_NAME         Full image name with tag (e.g., myregistry.azurecr.io/app:v1.0)
-  --context BUILD_CONTEXT    Path to the build context directory
+  --image IMAGE_NAME              Full image name with tag (e.g., myregistry.azurecr.io/app:v1.0)
+  --build-context BUILD_CONTEXT   Path to the build context directory
 
 Optional arguments:
-  --platforms PLATFORMS      Comma-separated list of platforms (default: linux/amd64,linux/arm64)
-  --help                     Show this help message
+  --platforms PLATFORMS           Comma-separated list of platforms (default: linux/amd64,linux/arm64)
+  --push                          Push the image to registry (default: false, only builds locally)
+  --help                          Show this help message
 
 Example:
-  $0 --image myregistry.azurecr.io/app:latest --context ./app --platforms linux/amd64,linux/arm64
+  $0 --image myregistry.azurecr.io/app:latest --build-context ./app --platforms linux/amd64,linux/arm64 --push
 EOF
   exit 1
 }
@@ -34,13 +36,17 @@ while [[ $# -gt 0 ]]; do
       IMAGE_NAME="$2"
       shift 2
       ;;
-    --context)
+    --build-context)
       BUILD_CONTEXT="$2"
       shift 2
       ;;
     --platforms)
       PLATFORMS="$2"
       shift 2
+      ;;
+    --push)
+      PUSH="true"
+      shift
       ;;
     --help)
       usage
@@ -82,15 +88,32 @@ if [[ ! "${PLATFORMS}" =~ ^[a-z0-9/,]+$ ]]; then
   exit 1
 fi
 
-echo "➡️   Building and pushing multi-platform images..."
+if [[ "${PUSH}" == "true" ]]; then
+  echo "➡️   Building and pushing multi-platform images..."
+else
+  echo "➡️   Building multi-platform images..."
+fi
+
 echo "    Image: ${IMAGE_NAME}"
 echo "    Context: ${BUILD_CONTEXT}"
 echo "    Platforms: ${PLATFORMS}"
+echo "    Push: ${PUSH}"
 
-docker buildx build \
-  --platform "${PLATFORMS}" \
-  --push \
-  -t "${IMAGE_NAME}" \
-  "${BUILD_CONTEXT}"
+BUILD_ARGS=(
+  --platform "${PLATFORMS}"
+  -t "${IMAGE_NAME}"
+)
 
-echo "✅ Successfully built and pushed: ${IMAGE_NAME}"
+if [[ "${PUSH}" == "true" ]]; then
+  BUILD_ARGS+=(--push)
+else
+  BUILD_ARGS+=(--load)
+fi
+
+docker buildx build "${BUILD_ARGS[@]}" "${BUILD_CONTEXT}"
+
+if [[ "${PUSH}" == "true" ]]; then
+  echo "✅ Successfully built and pushed: ${IMAGE_NAME}"
+else
+  echo "✅ Successfully built: ${IMAGE_NAME}"
+fi
