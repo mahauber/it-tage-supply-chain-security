@@ -15,7 +15,7 @@ permissions:
 
 env:
   ACR_NAME: acrsupplychaindemo
-  IMAGE_NAME: ${{ env.ACR_NAME }}.azurecr.io/simple-service:${{ github.sha }}
+  IMAGE_NAME: acrsupplychaindemo.azurecr.io/simple-service:${{ github.sha }}
   SCRIPTS_DIR: ${{ github.workspace }}/.github/scripts
 
 jobs:
