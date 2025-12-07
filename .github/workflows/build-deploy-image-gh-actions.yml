@@ -17,6 +17,8 @@ env:
   ACR_NAME: acrsupplychaindemo
   IMAGE_NAME: acrsupplychaindemo.azurecr.io/simple-service:${{ github.sha }}
   SCRIPTS_DIR: ${{ github.workspace }}/.github/scripts
+  AKS_RESOURCE_GROUP: rg-supply-chain-demo
+  AKS_CLUSTER_NAME: aks-supply-chain-demo
 
 jobs:
   build-sign-deploy:
@@ -28,16 +30,40 @@ jobs:
           git clone --depth 1 --branch ${GITHUB_REF#refs/heads/} https://github.com/${{ github.repository }} .
           chmod +x ${{ env.SCRIPTS_DIR }}/*.sh
 
-      - name: Install Cosign
-        run: |
-          ${{ env.SCRIPTS_DIR }}/install-cosign.sh \
-            --version v3.0.2
+      #################
+      ## BUILD IMAGE ##
+      #################
 
       - name: Set up Docker Buildx
         run: |
           ${{ env.SCRIPTS_DIR }}/setup-docker-buildx.sh \
             --name multiarch \
             --driver docker-container
+
+      - name: Build container image
+        run: |
+          ${{ env.SCRIPTS_DIR }}/build-push-image.sh \
+            --image ${{ env.IMAGE_NAME }} \
+            --build-context ${{ github.workspace }}/simple-service \
+            --platforms linux/amd64,linux/arm64
+
+      ##########################
+      ## SCAN VULNERABILITIES ##
+      ##########################
+
+      - name: Install Trivy
+        run: |
+          ${{ env.SCRIPTS_DIR }}/install-trivy.sh
+
+      - name: Trivy scan vulnerabilities
+        run: |
+          ${{ env.SCRIPTS_DIR }}/trivy-scan.sh \
+            --image ${{ env.IMAGE_NAME }} \
+            --severity CRITICAL,HIGH
+
+      ################
+      ## PUSH IMAGE ##
+      ################
 
       - name: Login to Azure using OIDC
         uses: azure/login@v2
@@ -51,28 +77,20 @@ jobs:
           ${{ env.SCRIPTS_DIR }}/acr-login.sh \
             --registry ${{ env.ACR_NAME }}.azurecr.io
 
-      - name: Build and Push container images
-        run: |
-          ${{ env.SCRIPTS_DIR }}/build-push-image.sh \
-            --image ${{ env.IMAGE_NAME }} \
-            --build-context ${{ github.workspace }}/simple-service \
-            --platforms linux/amd64,linux/arm64
-
-      - name: Install Trivy
-        run: |
-          ${{ env.SCRIPTS_DIR }}/install-trivy.sh
-
-      - name: Trivy scan vulnerabilities
-        run: |
-          ${{ env.SCRIPTS_DIR }}/trivy-scan.sh \
-            --image ${{ env.IMAGE_NAME }} \
-            --severity CRITICAL,HIGH
-
       - name: Push Docker image
         run: |
           ${{ env.SCRIPTS_DIR }}/push-image-digest.sh \
             --image ${{ env.IMAGE_NAME }} \
             --registry ${{ env.ACR_NAME }}
+
+      ################
+      ## SIGN IMAGE ##
+      ################
+
+      - name: Install Cosign
+        run: |
+          ${{ env.SCRIPTS_DIR }}/install-cosign.sh \
+            --version v3.0.2
 
       - name: Sign Docker image
         env:
@@ -80,6 +98,10 @@ jobs:
         run: |
           ${{ env.SCRIPTS_DIR }}/sign-image.sh \
             --image ${{ env.IMAGE_REF_DIGEST }}
+
+      ##########################
+      ## GENERATE & SIGN SBOM ##
+      ##########################
 
       - name: Trivy generate SBOM
         run: |
@@ -97,11 +119,15 @@ jobs:
             --sbom-file simple-service.cdx.json \
             --sbom-type cyclonedx
 
-      - name: Deploy to DEV AKS cluster
+      ###############################
+      ## DEPLOY TO DEV AKS CLUSTER ##
+      ###############################
+
+      - name: Deploy to AKS cluster
         run: |
           ${{ env.SCRIPTS_DIR }}/deploy-aks.sh \
-            --resource-group ${{ vars.DEV_AKS_RESOURCE_GROUP }} \
-            --cluster-name ${{ vars.DEV_AKS_CLUSTER_NAME }} \
+            --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
+            --cluster-name ${{ env.AKS_CLUSTER_NAME }} \
             --image ${{ env.IMAGE_REF_DIGEST }} \
             --kustomize-path ${GITHUB_WORKSPACE}/k8s/applications/simple-service/overlays/dev \
             --git-commit $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA \
