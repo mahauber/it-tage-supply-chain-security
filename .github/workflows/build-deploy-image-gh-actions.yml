@@ -31,6 +31,11 @@ jobs:
           git clone --depth 1 --branch ${GITHUB_REF#refs/heads/} https://github.com/${{ github.repository }} .
           chmod +x ${{ env.SCRIPTS_DIR }}/*.sh
 
+      - name: Install mise
+        uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # v3.5.1
+        with:
+          version: latest
+
       #################
       ## BUILD IMAGE ##
       #################
@@ -52,10 +57,6 @@ jobs:
       ##########################
       ## SCAN VULNERABILITIES ##
       ##########################
-
-      - name: Install Trivy
-        run: |
-          ${{ env.SCRIPTS_DIR }}/install-trivy.sh
 
       - name: Trivy scan vulnerabilities
         run: |
@@ -89,23 +90,11 @@ jobs:
       ## SIGN IMAGE ##
       ################
 
-      - name: Install Cosign
-        run: |
-          ${{ env.SCRIPTS_DIR }}/install-cosign.sh \
-            --version v3.0.2
-
       - name: Sign Docker image
         run: |
           ${{ env.SCRIPTS_DIR }}/sign-image.sh \
             --image ${{ env.IMAGE_REF_DIGEST }} \
             --key ${{ secrets.AZ_KEY_REF }}
-
-      - name: Generate provenance attestation
-        uses: actions/attest-build-provenance@v3.0.0
-        with:
-          subject-name: ${{ env.ACR_NAME }}.azurecr.io/simple-service
-          subject-digest: ${{ env.IMAGE_DIGEST }}
-          push-to-registry: true
 
       ##########################
       ## GENERATE & SIGN SBOM ##
@@ -125,6 +114,13 @@ jobs:
             --sbom-file simple-service.cdx.json \
             --sbom-type cyclonedx \
             --key ${{ secrets.AZ_KEY_REF }}
+
+      - name: Generate provenance attestation
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
+        with:
+          subject-name: ${{ env.ACR_NAME }}.azurecr.io/simple-service
+          subject-digest: ${{ env.IMAGE_DIGEST }}
+          push-to-registry: true
 
       ###############################
       ## DEPLOY TO DEV AKS CLUSTER ##
