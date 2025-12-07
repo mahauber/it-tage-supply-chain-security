@@ -45,7 +45,8 @@ jobs:
           ${{ env.SCRIPTS_DIR }}/build-push-image.sh \
             --image ${{ env.IMAGE_NAME }} \
             --build-context ${{ github.workspace }}/simple-service \
-            --platforms linux/amd64,linux/arm64
+            --platforms linux/amd64 \
+            --load
 
       ##########################
       ## SCAN VULNERABILITIES ##

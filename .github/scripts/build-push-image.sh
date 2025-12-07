@@ -6,11 +6,12 @@ PLATFORMS="linux/amd64,linux/arm64"
 IMAGE_NAME=""
 BUILD_CONTEXT=""
 PUSH="false"
+LOAD="false"
 
 # Usage function
 usage() {
   cat <<EOF
-Usage: $0 --image IMAGE_NAME --build-context BUILD_CONTEXT [--platforms PLATFORMS] [--push]
+Usage: $0 --image IMAGE_NAME --build-context BUILD_CONTEXT [--platforms PLATFORMS] [--push|--load]
 
 Build multi-platform Docker images.
 
@@ -20,10 +21,12 @@ Required arguments:
 
 Optional arguments:
   --platforms PLATFORMS           Comma-separated list of platforms (default: linux/amd64,linux/arm64)
-  --push                          Push the image to registry (default: false, only builds locally)
+  --push                          Push the image to registry
+  --load                          Load image into Docker (only works with single platform)
   --help                          Show this help message
 
 Example:
+  $0 --image myregistry.azurecr.io/app:latest --build-context ./app --platforms linux/amd64 --load
   $0 --image myregistry.azurecr.io/app:latest --build-context ./app --platforms linux/amd64,linux/arm64 --push
 EOF
   exit 1
@@ -46,6 +49,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --push)
       PUSH="true"
+      shift
+      ;;
+    --load)
+      LOAD="true"
       shift
       ;;
     --help)
@@ -88,8 +95,15 @@ if [[ ! "${PLATFORMS}" =~ ^[a-z0-9/,]+$ ]]; then
   exit 1
 fi
 
+if [[ "${PUSH}" == "true" && "${LOAD}" == "true" ]]; then
+  echo "ERROR: Cannot use both --push and --load" >&2
+  exit 1
+fi
+
 if [[ "${PUSH}" == "true" ]]; then
   echo "➡️   Building and pushing multi-platform images..."
+elif [[ "${LOAD}" == "true" ]]; then
+  echo "➡️   Building and loading image into Docker..."
 else
   echo "➡️   Building multi-platform images..."
 fi
@@ -98,6 +112,7 @@ echo "    Image: ${IMAGE_NAME}"
 echo "    Context: ${BUILD_CONTEXT}"
 echo "    Platforms: ${PLATFORMS}"
 echo "    Push: ${PUSH}"
+echo "    Load: ${LOAD}"
 
 BUILD_ARGS=(
   --platform "${PLATFORMS}"
@@ -106,12 +121,23 @@ BUILD_ARGS=(
 
 if [[ "${PUSH}" == "true" ]]; then
   BUILD_ARGS+=(--push)
+elif [[ "${LOAD}" == "true" ]]; then
+  # Validate single platform for --load
+  PLATFORM_COUNT=$(echo "${PLATFORMS}" | tr ',' '\n' | wc -l)
+  if [[ ${PLATFORM_COUNT} -gt 1 ]]; then
+    echo "ERROR: --load only supports single platform builds" >&2
+    echo "Current platforms: ${PLATFORMS}" >&2
+    exit 1
+  fi
+  BUILD_ARGS+=(--load)
 fi
 
 docker buildx build "${BUILD_ARGS[@]}" "${BUILD_CONTEXT}"
 
 if [[ "${PUSH}" == "true" ]]; then
   echo "✅ Successfully built and pushed: ${IMAGE_NAME}"
+elif [[ "${LOAD}" == "true" ]]; then
+  echo "✅ Successfully built and loaded: ${IMAGE_NAME}"
 else
   echo "✅ Successfully built: ${IMAGE_NAME}"
 fi
