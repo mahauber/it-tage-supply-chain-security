@@ -1,4 +1,4 @@
 [tools]
 trivy = "0.68.1"
 cosign = "3.0.2"
-docker = "29.1.2"
+docker-cli = "29.1.2"
