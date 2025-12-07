@@ -30,11 +30,14 @@ jobs:
 
       - name: Install Cosign
         run: |
-          ${{ env.SCRIPTS_DIR }}/install-cosign.sh --version v3.0.2
+          ${{ env.SCRIPTS_DIR }}/install-cosign.sh \
+            --version v3.0.2
 
       - name: Set up Docker Buildx
         run: |
-          ${{ env.SCRIPTS_DIR }}/setup-docker-buildx.sh
+          ${{ env.SCRIPTS_DIR }}/setup-docker-buildx.sh \
+            --name multiarch \
+            --driver docker-container
 
       - name: Login to Azure using OIDC
         uses: azure/login@v2
