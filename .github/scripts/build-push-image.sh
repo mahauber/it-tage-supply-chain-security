@@ -106,8 +106,6 @@ BUILD_ARGS=(
 
 if [[ "${PUSH}" == "true" ]]; then
   BUILD_ARGS+=(--push)
-else
-  BUILD_ARGS+=(--load)
 fi
 
 docker buildx build "${BUILD_ARGS[@]}" "${BUILD_CONTEXT}"
