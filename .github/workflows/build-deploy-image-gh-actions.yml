@@ -134,7 +134,7 @@ jobs:
             --resource-group ${{ env.AKS_RESOURCE_GROUP }} \
             --cluster-name ${{ env.AKS_CLUSTER_NAME }} \
             --image ${{ env.IMAGE_REF_DIGEST }} \
-            --kustomize-path ${GITHUB_WORKSPACE}/kubernetes/applications/simple-service \
+            --kustomize-path ${GITHUB_WORKSPACE}/kubernetes/applications \
             --git-commit $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/$GITHUB_SHA \
             --run-url $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
 
