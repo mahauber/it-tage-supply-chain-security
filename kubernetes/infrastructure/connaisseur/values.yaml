@@ -37,6 +37,9 @@ application:
     - pattern: "docker.io/library/traefik:*"
       validator: allow
     
+    - pattern: "quay.io/jetstack/cert-manager*:*"
+      validator: allow
+
     # Connaisseur itself - allow to prevent chicken-egg problem
     - pattern: "docker.io/securesystemsengineering/connaisseur:*"
       validator: allow

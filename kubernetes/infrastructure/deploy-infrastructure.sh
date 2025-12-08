@@ -14,3 +14,13 @@ helm upgrade --install connaisseur connaisseur/connaisseur \
     --version 2.9.0 \
     --create-namespace \
     --namespace connaisseur
+
+helm repo add cert-manager https://charts.jetstack.io
+helm upgrade --install cert-manager cert-manager/cert-manager \
+    --atomic \
+    -f cert-manager/values.yaml \
+    --version 1.19.1 \
+    --create-namespace \
+    --namespace cert-manager
+
+kubectl apply -f cert-manager/clusterissuer.yaml

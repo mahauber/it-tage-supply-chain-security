@@ -4,8 +4,13 @@ metadata:
   name: simple-service
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: "letsencrypt-production"
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
+  tls:
+  - hosts:
+    - it-tage.h4r.dev
+    secretName: it-tage-h4r-dev-tls
   rules:
   - host: it-tage.h4r.dev
     http:
