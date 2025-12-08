@@ -4,3 +4,6 @@ cosign = "3.0.2"
 docker-cli = "29.1.2"
 azure-kubelogin = "0.2.13"
 kustomize = "5.8.0"
+
+[settings]
+lockfile = true
