@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: simple-service
-        image: acrsupplychaindemo.azurecr.io/simple-service
+        image: acrsupplychaindemo.azurecr.io/simple-service@sha256:024983dc64099166a45a6cb2c82857947a9eff30c382a7ac92fed04da8d0e0d4
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080

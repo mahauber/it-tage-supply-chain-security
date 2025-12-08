@@ -7,7 +7,7 @@ on:
       - main
     paths:
       - 'simple-service/**'
-      - '.github/workflows/build-deploy-simple-service.yml'
+      - '.github/workflows/build-deploy-image-gh-actions.yml'
 
 permissions:
   id-token: write

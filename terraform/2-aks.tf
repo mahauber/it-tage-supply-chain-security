@@ -50,3 +50,28 @@ resource "azurerm_role_assignment" "aks_acr_pull" {
   scope                            = azurerm_container_registry.acr.id
   skip_service_principal_aad_check = true
 }
+
+######################
+## CONNAISSEUR AUTH ##
+######################
+
+resource "azurerm_user_assigned_identity" "connaisseur" {
+  location            = var.location
+  name                = "id-aks-connaisseur"
+  resource_group_name = azurerm_resource_group.main.name
+}
+
+resource "azurerm_role_assignment" "connaisseur_acr_pull" {
+  scope                = azurerm_container_registry.acr.id
+  role_definition_name = "AcrPull"
+  principal_id         = azurerm_user_assigned_identity.connaisseur.principal_id
+}
+
+resource "azurerm_federated_identity_credential" "connaisseur" {
+  name                = "connaisseur"
+  resource_group_name = azurerm_resource_group.main.name
+  audience            = ["api://AzureADTokenExchange"]
+  issuer              = azurerm_kubernetes_cluster.aks.oidc_issuer_url
+  parent_id           = azurerm_user_assigned_identity.connaisseur.id
+  subject             = "system:serviceaccount:connaisseur:connaisseur-serviceaccount"
+}

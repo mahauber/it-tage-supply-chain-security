@@ -1,0 +1,56 @@
+kubernetes:
+  serviceaccount:
+    annotations:
+      azure.workload.identity/client-id: "3a8cc486-f2c5-4534-a382-d640eda68e49"
+      azure.workload.identity/tenant-id: "60fb1cfc-a9ef-4a93-b5e8-5d021bd6f296"
+  
+  deployment:
+    podLabels:
+      azure.workload.identity/use: "true"
+
+application:
+  validators:
+    - name: allow
+      type: static
+      approve: true
+    - name: deny
+      type: static
+      approve: false
+    - name: acr-cosign
+      type: cosign
+      auth:
+        useKeychain: true
+      trustRoots:
+        - name: acr
+          key: |
+            -----BEGIN PUBLIC KEY-----
+            MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEP80vjZVep3CBZ7jjRMvTLtR0ItXd
+            e5yt3ayw10yEqy8BKDJ1ihBJIErb9DFeQXBVWgi5jHP3bHeobxY7+8HLFQ==
+            -----END PUBLIC KEY-----
+
+  policy:
+    # Redis for caching
+    - pattern: "docker.io/library/redis@sha256:83edc2b8e9ffb1781a67bdab260a94674f802881838e20bba0f9a69d8cb40d70"
+      validator: allow
+    
+    # Traefik - allow all versions
+    - pattern: "docker.io/library/traefik:*"
+      validator: allow
+    
+    # Connaisseur itself - allow to prevent chicken-egg problem
+    - pattern: "docker.io/securesystemsengineering/connaisseur:*"
+      validator: allow
+
+    # K8s system components
+    - pattern: "mcr.microsoft.com/*:*"
+      validator: allow
+
+    # Your Cosign-signed ACR images
+    - pattern: "acrsupplychaindemo.azurecr.io/*:*"
+      validator: acr-cosign
+      with:
+        trustRoot: acr
+    
+    # Deny everything else - MUST BE LAST and use *:*
+    - pattern: "*"
+      validator: deny

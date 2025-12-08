@@ -64,5 +64,5 @@ fi
 echo "➡️   Signing Docker image..."
 echo "    Image: ${IMAGE_REF}"
 
-cosign sign -y --key "${COSIGN_KEY_REF}" "${IMAGE_REF}"
+cosign sign -y --key "${COSIGN_KEY_REF}" "${IMAGE_REF}" --verbose
 echo "✅ Successfully signed image: ${IMAGE_REF}"
