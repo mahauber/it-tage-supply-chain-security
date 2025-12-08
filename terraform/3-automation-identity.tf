@@ -13,7 +13,8 @@ resource "azurerm_role_assignment" "github" {
     "Key Vault Administrator",
     "Storage Blob Data Owner",
     "Contributor",
-    "Azure Kubernetes Service RBAC Cluster Admin"
+    "Azure Kubernetes Service RBAC Cluster Admin",
+    "AcrPush"
   ])
   scope                = "/subscriptions/${var.subscription_id}"
   role_definition_name = each.value
