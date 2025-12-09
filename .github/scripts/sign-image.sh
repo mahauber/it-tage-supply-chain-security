@@ -65,5 +65,5 @@ fi
 echo "➡️   Signing Docker image..."
 echo "    Image: ${IMAGE_REF}"
 
-COSIGN_EXPERIMENTAL=1 cosign sign -y --key "${COSIGN_KEY_REF}" "${IMAGE_REF}" --verbose
+COSIGN_EXPERIMENTAL=1 cosign sign -y --key azurekms://kv-supply-chain-demo.vault.azure.net/github-actions-cosign-key-simple-service/384dfd5ac2bc48da9c7e674bdfe952d8 "${IMAGE_REF}" --verbose
 echo "✅ Successfully signed image: ${IMAGE_REF}"
