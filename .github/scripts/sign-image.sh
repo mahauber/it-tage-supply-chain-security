@@ -65,5 +65,5 @@ fi
 echo "➡️   Signing Docker image..."
 echo "    Image: ${IMAGE_REF}"
 
-COSIGN_EXPERIMENTAL=1 cosign sign -y --key "${COSIGN_KEY_REF}" "${IMAGE_REF}" --verbose
+cosign sign -y --key "${COSIGN_KEY_REF}" "${IMAGE_REF}" --registry-referrers-mode=legacy # connaisseur doesnt support oci referrers
 echo "✅ Successfully signed image: ${IMAGE_REF}"
