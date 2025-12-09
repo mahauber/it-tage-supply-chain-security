@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+set -o xtrace
 
 # Default values
 IMAGE_REF=""

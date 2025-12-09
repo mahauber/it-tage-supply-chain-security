@@ -5,6 +5,7 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
     cert-manager.io/cluster-issuer: "letsencrypt-production"
+    acme.cert-manager.io/http01-ingress-class: "traefik"
 spec:
   ingressClassName: traefik
   tls:
