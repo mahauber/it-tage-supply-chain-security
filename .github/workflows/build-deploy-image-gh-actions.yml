@@ -95,7 +95,7 @@ jobs:
         run: |
           ${{ env.SCRIPTS_DIR }}/sign-image.sh \
             --image ${{ env.IMAGE_REF_DIGEST }} \
-            --key ${{ secrets.AZ_KEY_REF }}
+            --key ${{ env.AZ_COSIGN_KEY_REF }}
 
       ##########################
       ## GENERATE & SIGN SBOM ##
