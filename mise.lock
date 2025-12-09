@@ -16,6 +16,15 @@ backend = "aqua:sigstore/cosign"
 "platforms.macos-x64" = { checksum = "sha256:0fc2b6f16b900abdfda3153b11fc435a8cbe3830e8e820fe8ad5fe4149a5b472", url = "https://github.com/sigstore/cosign/releases/download/v3.0.2/cosign-darwin-amd64"}
 "platforms.windows-x64" = { checksum = "sha256:7a137280d8686665ceb4d8565df2a0ac63f28031e014cdcae5d56891a6c8a400", url = "https://github.com/sigstore/cosign/releases/download/v3.0.2/cosign-windows-amd64.exe"}
 
+[[tools.cosign]]
+version = "2.5.0"
+backend = "aqua:sigstore/cosign"
+"platforms.linux-arm64" = { checksum = "sha256:080a998f9878f22dafdb9ad54d5b2e2b8e7a38c53527250f9d89a6763a28d545", url = "https://github.com/sigstore/cosign/releases/download/v2.5.0/cosign-linux-arm64"}
+"platforms.linux-x64" = { checksum = "sha256:1f6c194dd0891eb345b436bb71ff9f996768355f5e0ce02dde88567029ac2188", url = "https://github.com/sigstore/cosign/releases/download/v2.5.0/cosign-linux-amd64"}
+"platforms.macos-arm64" = { checksum = "sha256:780da3654d9601367b0d54686ac65cb9716578610cabe292d725c7008de4db85", url = "https://github.com/sigstore/cosign/releases/download/v2.5.0/cosign-darwin-arm64"}
+"platforms.macos-x64" = { checksum = "sha256:d61cc50f6f32c2b63cb81cd8a935e5dd1be8520d639242031a1102092bee44d4", url = "https://github.com/sigstore/cosign/releases/download/v2.5.0/cosign-darwin-amd64"}
+"platforms.windows-x64" = { checksum = "sha256:2345667cbcf60767c1a6f678755cbb7465367761084e9d2cbb59ae0cc1a94437", url = "https://github.com/sigstore/cosign/releases/download/v2.5.0/cosign-windows-amd64.exe"}
+
 [[tools.docker-cli]]
 version = "29.1.2"
 backend = "aqua:docker/cli"

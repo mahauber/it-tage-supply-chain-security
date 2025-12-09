@@ -1,6 +1,6 @@
 [tools]
 trivy = "0.68.1"
-cosign = "3.0.2"
+cosign = "2.5.0"
 docker-cli = "29.1.2"
 azure-kubelogin = "0.2.13"
 kustomize = "5.8.0"
