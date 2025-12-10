@@ -19,7 +19,7 @@ func helloHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received request from %s", r.RemoteAddr)
 		
 	response := Response{
-		Message: "Hello IT-Tage 2025!",
+		Message: "Hello IT-Tage!",
 	}
 
 	w.Header().Set("Content-Type", "application/json")
